@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 ">
+    <title>Registre des Cotisations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        header {
+            background-color: #4a90e2;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin: 0;
+        }
+
+        .hamburger {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .hamburger div {
+            width: 30px;
+            height: 5px;
+            background-color: white;
+            border-radius: 3px;
+        }
+
+        .menu {
+            position: absolute;
+            top: 60px;
+            right: 15px;
+            background-color: #345b7e;
+            width: 180px;
+            border-radius: 5px;
+            padding: 0.3rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            flex-direction: column;
+        }
+
+        .menu a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 0.8rem;
+            font-weight: bold;
+            border-bottom: 1px solid #fff;
+            transition: background-color 0.3s;
+        }
+
+        .menu a:hover {
+            background-color: #4a90e2;
+        }
+
+        .menu.show {
+            display: flex;
+        }
+
+        main {
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .section {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        h2 {
+            color: #345b7e;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"], button {
+            font-size: 1rem;
+            padding: 0.6rem;
+            margin: 0.4rem 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #345b7e;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4a90e2;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #e0f3ff;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+    </style>
+    <script>
+        let members = {};
+        let adminPassword = null;
+        let isPasswordSet = false;
+
+        function toggleMenu() {
+            document.querySelector('.menu').classList.toggle('show');
+        }
+
+        function setPassword() {
+            if (adminPassword) {
+                alert("Un mot de passe a déjà été défini.");
+                return;
+            }
+            const newPassword = prompt("Entrez votre nouveau mot de passe");
+            if (!newPassword || newPassword.length < 6) {
+                alert("Le mot de passe doit comporter au moins 6 caractères.");
+                return;
+            }
+            adminPassword = newPassword;
+            isPasswordSet = true;
+            alert("Le mot de passe a été défini avec succès !");
+        }
+
+        function resetPassword() {
+            const currentPassword = prompt("Entrez le mot de passe actuel pour réinitialiser");
+            if (currentPassword !== adminPassword) {
+                alert("Le mot de passe actuel est incorrect.");
+                return;
+            }
+
+            const newPassword = prompt("Entrez votre nouveau mot de passe");
+            if (!newPassword || newPassword.length < 6) {
+                alert("Le mot de passe doit comporter au moins 6 caractères.");
+                return;
+            }
+            adminPassword = newPassword;
+            alert("Le mot de passe a été réinitialisé avec succès !");
+        }
+
+        function checkAdminPassword() {
+            if (!adminPassword) {
+                alert("Aucun mot de passe défini, veuillez le définir d'abord.");
+                return false;
+            }
+
+            const enteredPassword = prompt("Entrez le mot de passe administrateur");
+            if (enteredPassword !== adminPassword) {
+                alert("Mot de passe incorrect.");
+                return false;
+            }
+            return true;
+        }
+
+        function addMember() {
+            if (adminPassword && !checkAdminPassword()) return;
+
+            const name = document.getElementById("memberName").value.trim();
+            if (!name) {
+                alert("Veuillez entrer un nom de membre.");
+                return;
+            }
+
+            if (members[name]) {
+                alert("Ce membre existe déjà !");
+                return;
+            }
+
+            members[name] = Array(52).fill(0);
+            alert(`Membre ${name} ajouté avec succès.`);
+            document.getElementById("memberName").value = "";
+        }
+
+        function searchMember() {
+            const searchName = document.getElementById("searchMemberName").value.trim();
+            const table = document.getElementById("resultsTable");
+            const tbody = document.getElementById("resultsBody");
+
+            if (!searchName || !members[searchName]) {
+                alert("Membre introuvable.");
+                table.classList.add("hidden");
+                return;
+            }
+
+            tbody.innerHTML = "";
+            members[searchName].forEach((status, week) => {
+                const row = `<tr>
+                    <td>Semaine ${week + 1}</td>
+                    <td>${status} FC</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            table.classList.remove("hidden");
+        }
+
+        function modifyMemberPayment() {
+            if (adminPassword && !checkAdminPassword()) return;
+
+            const memberName = prompt("Entrez le nom du membre dont vous voulez modifier le paiement");
+            if (!members[memberName]) {
+                alert("Le membre n'existe pas.");
+                return;
+            }
+
+            const week = parseInt(prompt("Entrez le numéro de la semaine à modifier (1 à 52)")) - 1;
+            if (week < 0 || week > 51) {
+                alert("Numéro de semaine invalide.");
+                return;
+            }
+
+            members[memberName][week] += 500;
+            alert(`Montant de la semaine ${week + 1} mis à jour : ${members[memberName][week]} FC.`);
+        }
+
+        function showHelp() {
+            alert("Aide :
+1. Ajouter un membre avec un mot de passe admin.
+2. Rechercher un membre en saisissant son nom.
+3. Modifier un paiement d'un membre via l'option d'administration. 
+4 développeur: arsenenzanzu19@gmail.com");
+        }
+
+        function showTerms() {
+            const termsText = `Politique d'Utilisation:
+- Ce système est destiné à gérer les cotisations des étudiants de L0 en FTSI
+- Toute tentative de piratage ou de modification illégale des paiements entraînera une exclusion immédiate.
+- Si un membre tente de falsifier son statut de paiement, sa cotisation sera réinitialisée, et il pourra être banni.
+
+Veuillez respecter l'intégrité des informations pour un fonctionnement optimal du registre des cotisations.`;
+
+            alert(termsText);
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Registre des Cotisations</h1>
+        <div class="hamburger" onclick="toggleMenu()">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </header>
+
+    <div class="menu">
+        <a href="#modifyPayment" onclick="modifyMemberPayment()">Modifier la semaine</a>
+        <a href="#setPassword" onclick="setPassword()">Définir Mot de Passe</a>
+        <a href="#resetPassword" onclick="resetPassword()">Réinitialiser Mot de Passe</a>
+        <a href="javascript:void(0);" onclick="showHelp()">Aide</a>
+        <a href="javascript:void(0);" onclick="showTerms()">Politique d'Utilisation</a>
+    </div>
+
+    <main>
+        <!-- Section de recherche -->
+        <div class="section" id="search">
+            <h2>Rechercher un membre</h2>
+            <input type="text" id="searchMemberName" placeholder="Nom du membre">
+            <button onclick="searchMember()">Rechercher</button>
+
+            <table id="resultsTable" class="hidden">
+                <thead>
+                    <tr>
+                        <th>Semaine</th>
+                        <th>Contribution</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Section d'ajout -->
+        <div class="section" id="add">
+            <h2>Ajouter un membre</h2>
+            <input type="text" id="memberName" placeholder="Nom du membre">
+            <button onclick="addMember()">Ajouter</button>
+        </div>
+    </main>
+</body>
+</html>
